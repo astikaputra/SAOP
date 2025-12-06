@@ -2,23 +2,44 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
-class AppServiceProvider extends ServiceProvider
+class AuthServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * The model to policy mappings for the application.
+     *
+     * @var array<class-string, class-string>
      */
-    public function register(): void
-    {
+    protected $policies = [
         //
-    }
+    ];
 
     /**
-     * Bootstrap any application services.
+     * Register any authentication / authorization services.
      */
     public function boot(): void
     {
-        //
+        // Define Gates based on roles
+        Gate::define('is-admin', function ($user) {
+            return in_array($user->role, ['SUPER_ADMIN', 'ADMIN']);
+        });
+
+        Gate::define('is-loket-staff', function ($user) {
+            return $user->role === 'LOKET_STAFF';
+        });
+
+        Gate::define('is-driver', function ($user) {
+            return $user->role === 'DRIVER';
+        });
+
+        Gate::define('is-manager', function ($user) {
+            return $user->role === 'MANAGER';
+        });
+
+        Gate::define('access-admin', function ($user) {
+            return in_array($user->role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER']);
+        });
     }
 }

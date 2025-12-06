@@ -2,47 +2,109 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',
+        'phone',
+        'counter_id',
+        'counter_status',
+        'telegram_user_id',
+        'telegram_username',
+        'is_active'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'last_active_at' => 'datetime',
+        'preferences' => 'array',
+        'is_active' => 'boolean'
+    ];
+
+    // User Roles
+    public const ROLES = [
+        'SUPER_ADMIN' => 'Super Administrator',
+        'ADMIN' => 'Administrator',
+        'LOKET_STAFF' => 'Staff Loket',
+        'DRIVER' => 'Driver',
+        'MANAGER' => 'Manager',
+        'CUSTOMER' => 'Customer'
+    ];
+
+    // Relationships
+    public function counter()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->belongsTo(Counter::class);
+    }
+
+    public function driver()
+    {
+        return $this->hasOne(Driver::class);
+    }
+
+    public function calledTickets()
+    {
+        return $this->hasMany(QueueTicket::class, 'called_by');
+    }
+
+    public function servedTickets()
+    {
+        return $this->hasMany(QueueTicket::class, 'served_by');
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class);
+    }
+
+    // Helper Methods
+    public function isAdmin()
+    {
+        return in_array($this->role, ['SUPER_ADMIN', 'ADMIN']);
+    }
+
+    public function isLoketStaff()
+    {
+        return $this->role === 'LOKET_STAFF';
+    }
+
+    public function isDriver()
+    {
+        return $this->role === 'DRIVER';
+    }
+
+    public function getRoleNameAttribute()
+    {
+        return self::ROLES[$this->role] ?? $this->role;
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeLoketStaff($query)
+    {
+        return $query->where('role', 'LOKET_STAFF');
+    }
+
+    public function scopeDrivers($query)
+    {
+        return $query->where('role', 'DRIVER');
     }
 }
