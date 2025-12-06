@@ -44,9 +44,19 @@ class Service extends Model
     }
 
     // Helper Methods
+    // public function getTypeNameAttribute()
+    // {
+    //     return self::TYPES[$this->type] ?? $this->type;
+    // }
+    // Tambahkan method ini jika belum ada
     public function getTypeNameAttribute()
     {
-        return self::TYPES[$this->type] ?? $this->type;
+        return match($this->type) {
+            'PICKUP_TRANSPORTASI' => 'Pickup Transportasi',
+            'TRANSUP' => 'Transup',
+            'SEWA_MOTOR' => 'Sewa Motor',
+            default => $this->type
+        };
     }
 
     public function getPriceRangeAttribute()

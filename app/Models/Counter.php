@@ -27,7 +27,7 @@ class Counter extends Model
     ];
 
     protected $casts = [
-        'service_types' => 'array',
+        'service_types' => 'array', // Ubah casting ke array
         'opening_time' => 'datetime:H:i',
         'closing_time' => 'datetime:H:i',
         'is_active' => 'boolean'
@@ -46,6 +46,31 @@ class Counter extends Model
         'VIP' => 'VIP',
         'EXPRESS' => 'Express'
     ];
+
+    // Mutator untuk service_types
+    public function setServiceTypesAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['service_types'] = json_encode($value);
+        } elseif (is_string($value) && json_decode($value) !== null) {
+            // Jika sudah JSON string, langsung simpan
+            $this->attributes['service_types'] = $value;
+        } else {
+            // Jika null atau invalid, simpan sebagai empty array
+            $this->attributes['service_types'] = json_encode([]);
+        }
+    }
+
+    // Accessor untuk service_types
+    public function getServiceTypesAttribute($value)
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+        
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : [];
+    }
 
     // Relationships
     public function currentTicket()
@@ -66,12 +91,22 @@ class Counter extends Model
     // Helper Methods
     public function getStatusNameAttribute()
     {
-        return self::STATUSES[$this->status] ?? $this->status;
+        return match($this->status) {
+            'ACTIVE' => 'Aktif',
+            'INACTIVE' => 'Tidak Aktif',
+            'MAINTENANCE' => 'Perbaikan',
+            default => $this->status
+        };
     }
 
     public function getTypeNameAttribute()
     {
-        return self::TYPES[$this->type] ?? $this->type;
+        return match($this->type) {
+            'REGULAR' => 'Regular',
+            'VIP' => 'VIP',
+            'EXPRESS' => 'Express',
+            default => $this->type
+        };
     }
 
     public function isOpen()
@@ -83,5 +118,25 @@ class Counter extends Model
         return $this->is_active && 
                $this->status === 'ACTIVE' &&
                $now->between($opening, $closing);
+    }
+
+    // Helper untuk mendapatkan service types dengan aman
+    public function getServiceTypesSafe()
+    {
+        $types = $this->service_types;
+        
+        // Jika sudah array, return langsung
+        if (is_array($types)) {
+            return $types;
+        }
+        
+        // Jika string, coba decode
+        if (is_string($types)) {
+            $decoded = json_decode($types, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        
+        // Default empty array
+        return [];
     }
 }

@@ -47,3 +47,28 @@ Route::middleware(['auth', 'role:LOKET_STAFF'])->prefix('loket')->group(function
 Route::middleware(['auth', 'role:DRIVER'])->prefix('driver')->group(function () {
     // Will add later
 });
+
+Route::get('/debug-loket', function() {
+    $user = \App\Models\User::where('email', 'budi@pelabuhan.com')->first();
+    auth()->login($user);
+    
+    $counter = $user->counter;
+    
+    echo "<h1>Debug Counter Data</h1>";
+    echo "<pre>";
+    echo "Counter ID: " . $counter->id . "\n";
+    echo "Counter Name: " . $counter->name . "\n";
+    echo "Service Types (raw): " . $counter->getRawOriginal('service_types') . "\n";
+    echo "Service Types (casted): ";
+    print_r($counter->service_types);
+    echo "\nType: " . gettype($counter->service_types) . "\n";
+    echo "Is array? " . (is_array($counter->service_types) ? 'YES' : 'NO') . "\n";
+    echo "Is string? " . (is_string($counter->service_types) ? 'YES' : 'NO') . "\n";
+    
+    // Test getServiceTypesSafe
+    echo "\nUsing getServiceTypesSafe:\n";
+    print_r($counter->getServiceTypesSafe());
+    echo "</pre>";
+    
+    exit;
+});
