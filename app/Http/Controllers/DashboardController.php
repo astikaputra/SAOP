@@ -139,7 +139,7 @@ class DashboardController extends Controller
             ->orderBy('queue_number')
             ->get();
 
-        return view('dashboard.loket', compact('counter', 'waitingTickets'));
+        return view('loket.index', compact('counter', 'waitingTickets'));
     }
 
     private function driverDashboard()

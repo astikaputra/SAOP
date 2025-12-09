@@ -121,22 +121,33 @@ class Counter extends Model
     }
 
     // Helper untuk mendapatkan service types dengan aman
-    public function getServiceTypesSafe()
-    {
-        $types = $this->service_types;
-        
-        // Jika sudah array, return langsung
-        if (is_array($types)) {
-            return $types;
-        }
-        
-        // Jika string, coba decode
-        if (is_string($types)) {
-            $decoded = json_decode($types, true);
-            return is_array($decoded) ? $decoded : [];
-        }
-        
-        // Default empty array
-        return [];
+    // App\Models\Counter.php
+
+/**
+ * Safely get service types as array
+ */
+public function getServiceTypesSafe()
+{
+    $types = $this->service_types ?? [];
+    
+    if (is_string($types)) {
+        $types = json_decode($types, true) ?? [];
     }
+    
+    // Jika masih kosong, beri default berdasarkan nama loket
+    if (empty($types)) {
+        if (str_contains($this->name, 'PICKUP')) {
+            $types = ['PICKUP_TRANSPORTASI'];
+        } elseif (str_contains($this->name, 'TRANSUP')) {
+            $types = ['TRANSUP'];
+        } elseif (str_contains($this->name, 'MOTOR')) {
+            $types = ['SEWA_MOTOR'];
+        } else {
+            $types = ['PICKUP_TRANSPORTASI', 'TRANSUP', 'SEWA_MOTOR'];
+        }
+    }
+    
+    return $types;
+}
+
 }

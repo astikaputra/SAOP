@@ -49,9 +49,13 @@ class User extends Authenticatable
     // Relationships
     public function counter()
     {
-        return $this->belongsTo(Counter::class);
+        return $this->hasOne(Counter::class);
     }
-
+    public function operator()
+    {
+        // Jika ingin tahu user yang mengoperasikan counter ini
+        return $this->belongsTo(User::class, 'user_id');
+    }
     public function driver()
     {
         return $this->hasOne(Driver::class);

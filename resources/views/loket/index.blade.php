@@ -1,4 +1,14 @@
 {{-- resources/views/loket/index.blade.php --}}
+@php
+    // Pastikan variabel ada dengan nilai default
+    $currentTicket = $currentTicket ?? null;
+    $counter = $counter ?? null;
+    $waitingTickets = $waitingTickets ?? collect([]);
+    $recentCalled = $recentCalled ?? collect([]);
+    $stats = $stats ?? ['called_today' => 0, 'completed_today' => 0, 'avg_wait_time' => 0];
+    $availableDrivers = $availableDrivers ?? collect([]);
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
@@ -21,10 +31,11 @@
                         <i class="fas fa-bullhorn mr-2"></i> Panggil Berikutnya
                     </button>
                 @endif
-                <a href="{{ route('queue.create') }}" 
-                   class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Antrian Baru
-                </a>
+            <a href="{{ route('queue.create') }}" 
+            class="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg flex flex-col items-center justify-center">
+                <i class="fas fa-plus text-lg mb-1"></i>
+                <span class="text-xs">Antrian Baru</span>
+            </a>
             </div>
         </div>
     </x-slot>
@@ -188,7 +199,7 @@
                                 </div>
                                 
                                 <!-- Additional Info -->
-                                @if($currentTicket->notes)
+                                @if($currentTicket->notes ?? false)
                                 <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
                                     <div class="text-sm font-medium text-yellow-800">Catatan:</div>
                                     <div class="text-sm text-yellow-700">{{ $currentTicket->notes }}</div>
@@ -244,12 +255,12 @@
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($waitingTickets as $index => $ticket)
-                                    <tr class="hover:bg-gray-50 {{ $ticket->is_priority ? 'bg-yellow-50' : '' }}">
+                                    <tr class="hover:bg-gray-50 {{ $ticket->is_priority ?? false ? 'bg-yellow-50' : '' }}">
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                             {{ $index + 1 }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="font-bold text-lg text-center {{ $ticket->is_priority ? 'text-red-600' : 'text-gray-900' }}">
+                                            <div class="font-bold text-lg text-center {{ ($ticket->is_priority ?? false) ? 'text-red-600' : 'text-gray-900' }}">
                                                 {{ $ticket->queue_number }}
                                             </div>
                                             <div class="text-xs text-gray-500 text-center">{{ $ticket->ticket_number }}</div>
@@ -257,7 +268,7 @@
                                         <td class="px-4 py-3 whitespace-nowrap">
                                             <div class="font-medium text-gray-900">{{ $ticket->customer_name }}</div>
                                             <div class="text-sm text-gray-500">{{ $ticket->customer_phone }}</div>
-                                            @if($ticket->is_priority)
+                                            @if($ticket->is_priority ?? false)
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
                                                 <i class="fas fa-star mr-1"></i> Prioritas
                                             </span>
@@ -266,7 +277,7 @@
                                         <td class="px-4 py-3 whitespace-nowrap">
                                             <div class="text-sm font-medium text-gray-900">{{ $ticket->service->name ?? 'N/A' }}</div>
                                             <div class="text-xs text-gray-500">{{ $ticket->service->sub_type ?? '' }}</div>
-                                            @if($ticket->passenger_count > 1)
+                                            @if(($ticket->passenger_count ?? 0) > 1)
                                             <div class="text-xs text-gray-500">
                                                 <i class="fas fa-users mr-1"></i>{{ $ticket->passenger_count }} orang
                                             </div>
@@ -501,7 +512,7 @@
 
     @push('scripts')
     <script>
-        let currentTicketId = '{{ $currentTicket->id ?? '' }}';
+        let currentTicketId = '{{ $currentTicket->id ?? "" }}';
         let skipTicketId = null;
         
         // Auto-refresh every 30 seconds
@@ -536,7 +547,7 @@
             const menu = document.getElementById('statusMenu');
             const button = document.querySelector('.dropdown button');
             
-            if (!menu.contains(event.target) && !button.contains(event.target)) {
+            if (menu && !menu.contains(event.target) && button && !button.contains(event.target)) {
                 menu.classList.add('hidden');
             }
         });
@@ -720,7 +731,7 @@
         }
         
         function printTodayReport() {
-            window.open('{{ route("loket.report.today") }}', '_blank');
+            alert('Fitur laporan akan datang di versi berikutnya');
         }
         
         function openAnnouncement() {

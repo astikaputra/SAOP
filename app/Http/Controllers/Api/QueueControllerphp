@@ -1,0 +1,92 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Service;
+use App\Models\Queue;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class QueueController extends Controller
+{
+    /**
+     * Get queue estimation
+     */
+    public function getEstimation(Request $request)
+    {
+        try {
+            $request->validate([
+                'service_id' => 'required|exists:services,id'
+            ]);
+
+            $serviceId = $request->query('service_id');
+            
+            // Get the service
+            $service = Service::find($serviceId);
+            if (!$service) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Service not found'
+                ], 404);
+            }
+
+            // Get today's date
+            $today = now()->format('Y-m-d');
+            
+            // Get the last queue number for this service today
+            $lastQueue = Queue::where('service_id', $serviceId)
+                ->whereDate('created_at', $today)
+                ->orderBy('queue_number', 'desc')
+                ->first();
+
+            // Calculate next queue number
+            $nextQueueNumber = 1;
+            if ($lastQueue) {
+                $nextQueueNumber = $lastQueue->queue_number + 1;
+            }
+
+            // Format queue number with prefix
+            $prefix = $this->getServicePrefix($service->type);
+            $formattedQueueNumber = $prefix . str_pad($nextQueueNumber, 3, '0', STR_PAD_LEFT);
+
+            // Calculate estimated wait time (average 5 minutes per queue)
+            $pendingQueues = Queue::where('service_id', $serviceId)
+                ->whereDate('created_at', $today)
+                ->whereIn('status', ['waiting', 'processing'])
+                ->count();
+
+            $estimatedWaitMinutes = ($pendingQueues * 5) + 5; // 5 minutes basic + queue time
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'queue_number' => $formattedQueueNumber,
+                    'estimated_wait_minutes' => $estimatedWaitMinutes,
+                    'pending_queues' => $pendingQueues,
+                    'service' => $service->name
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting estimation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get prefix for service type
+     */
+    private function getServicePrefix($type)
+    {
+        $prefixes = [
+            'PICKUP_TRANSPORTASI' => 'PT',
+            'TRANSUP' => 'TS',
+            'SEWA_MOTOR' => 'SM'
+        ];
+
+        return $prefixes[$type] ?? 'Q';
+    }
+}
